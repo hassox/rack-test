@@ -168,7 +168,7 @@ module Rack
       def env_for(path, env)
         uri = URI.parse(path)
         uri.path = "/#{uri.path}" unless uri.path[0] == ?/
-        uri.host ||= @default_host
+        uri.host ||= @rack_mock_session.current_host
 
         env = default_env.merge(env)
 
@@ -213,7 +213,6 @@ module Rack
 
       def process_request(uri, env)
         uri = URI.parse(uri)
-        uri.host ||= @default_host
 
         @rack_mock_session.request(uri, env)
 
