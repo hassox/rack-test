@@ -82,7 +82,7 @@ module Rack
         old_value = request.cookies["count"].to_i || 0
         new_value = (old_value + 1).to_s
 
-        response.set_cookie("count", :value => new_value, :domain => "localhost.com")
+        response.set_cookie("count", :value => new_value, :domain => "localhost.com", :path => '/')
         new_value
       end
 

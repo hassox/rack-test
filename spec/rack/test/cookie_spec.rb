@@ -137,6 +137,16 @@ describe Rack::Test::Session do
       get "http://foo.example.org/cookies/subdomain"
       last_request.cookies.should == { "count" => "2" }
     end
+    
+    it "a cookie with a path of '/' is sent when contacting the host" do
+      get "http://localhost.com/cookies/domain"
+      get "http://localhost.com/cookies/domain"
+      last_request.cookies.should == { "count" => "1" }
+      
+      get "http://localhost.com"
+      last_request.cookies.should == { "count" => "2" }
+    end
+    
 
     it "allows cookies to be cleared" do
       get "/cookies/set", "value" => "1"
