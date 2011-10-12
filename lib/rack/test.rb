@@ -9,7 +9,7 @@ require "rack/test/uploaded_file"
 
 module Rack
   module Test
-    VERSION = "0.5.7"
+    VERSION = "0.6.1"
 
     DEFAULT_HOST = "example.org"
     MULTIPART_BOUNDARY = "----------XnJLe9ZIbbGUYtzPQJ16u1"
@@ -84,6 +84,15 @@ module Rack
         process_request(uri, env, &block)
       end
 
+      # Issue an OPTIONS request for the given URI. See #get
+      #
+      # Example:
+      #   options "/"
+      def options(uri, params = {}, env = {}, &block)
+        env = env_for(uri, env.merge(:method => "OPTIONS", :params => params))
+        process_request(uri, env, &block)
+      end
+
       # Issue a HEAD request for the given URI. See #get
       #
       # Example:
@@ -144,14 +153,15 @@ module Rack
       end
 
       # Rack::Test will not follow any redirects automatically. This method
-      # will follow the redirect returned in the last response. If the last
-      # response was not a redirect, an error will be raised.
+      # will follow the redirect returned (including setting the Referer header
+      # on the new request) in the last response. If the last response was not
+      # a redirect, an error will be raised.
       def follow_redirect!
         unless last_response.redirect?
           raise Error.new("Last response was not a redirect. Cannot follow_redirect!")
         end
 
-        get(last_response["Location"])
+        get(last_response["Location"], {}, { "HTTP_REFERER" => last_request.url })
       end
 
     private
@@ -161,9 +171,9 @@ module Rack
         uri.path = "/#{uri.path}" unless uri.path[0] == ?/
         uri.host ||= @rack_mock_session.current_host
 
-        env["HTTP_HOST"] ||= [uri.host, uri.port].compact.join(":")
-
         env = default_env.merge(env)
+
+        env["HTTP_HOST"] ||= [uri.host, uri.port].compact.join(":")
 
         env.update("HTTPS" => "on") if URI::HTTPS === uri
         env["HTTP_X_REQUESTED_WITH"] = "XMLHttpRequest" if env[:xhr]
@@ -229,7 +239,7 @@ module Rack
           "username"  => @digest_username,
           "nc"        => "00000001",
           "cnonce"    => "nonsensenonce",
-          "uri"       => last_request.path_info,
+          "uri"       => last_request.fullpath,
           "method"    => last_request.env["REQUEST_METHOD"],
         })
 
